@@ -2,8 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
-	"hello-go/internal/models"
-	"hello-go/internal/repository"
+	"github.com/kaw3-q/api-blog-go/internal/models"
+	"github.com/kaw3-q/api-blog-go/internal/repository"
 	"net/http"
 	"strconv"
 )

@@ -1,4 +1,4 @@
-module hello-go
+module github.com/kaw3-q/api-blog-go
 
 go 1.25.0
 

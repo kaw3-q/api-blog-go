@@ -1,7 +1,7 @@
 package repository
 
 import (
-	"hello-go/internal/models"
+	"github.com/kaw3-q/api-blog-go/internal/models"
 	"gorm.io/gorm"
 )
 

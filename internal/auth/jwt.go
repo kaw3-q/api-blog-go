@@ -1,7 +1,7 @@
 package auth
 
 import (
-	"hello-go/internal/models"
+	"github.com/kaw3-q/api-blog-go/internal/models"
 	"time"
 	"github.com/golang-jwt/jwt/v5"
 	"golang.org/x/crypto/bcrypt"

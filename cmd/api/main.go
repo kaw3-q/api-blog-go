@@ -2,10 +2,10 @@ package main
 
 import (
 	"fmt"
-	"hello-go/internal/handlers"
-	"hello-go/internal/middleware"
-	"hello-go/internal/models"
-	"hello-go/internal/repository"
+	"github.com/kaw3-q/api-blog-go/internal/handlers"
+	"github.com/kaw3-q/api-blog-go/internal/middleware"
+	"github.com/kaw3-q/api-blog-go/internal/models"
+	"github.com/kaw3-q/api-blog-go/internal/repository"
 	"net/http"
 
 	"gorm.io/driver/sqlite"

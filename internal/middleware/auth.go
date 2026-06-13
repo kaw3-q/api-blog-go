@@ -2,8 +2,8 @@ package middleware
 
 import (
 	"context"
-	"hello-go/internal/auth"
-	"hello-go/internal/models"
+	"github.com/kaw3-q/api-blog-go/internal/auth"
+	"github.com/kaw3-q/api-blog-go/internal/models"
 	"net/http"
 	"strings"
 )
