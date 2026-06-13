@@ -1,0 +1,17 @@
+# Binaries
+bin/
+cmd/api/api
+
+# Database
+blog.db
+blog.db-journal
+
+# Dependency directories
+vendor/
+
+# OS generated files
+.DS_Store
+.DS_Store?
+ehthumbs.db
+Icon?
+Thumbs.db
