@@ -67,5 +67,5 @@ func main() {
 
 	port := ":8080"
 	fmt.Printf("Servidor Blog SEGURO rodando em http://localhost%s\n", port)
-	http.ListenAndServe(port, mux)
+	http.ListenAndServe(port, middleware.CORSMiddleware(mux))
 }
