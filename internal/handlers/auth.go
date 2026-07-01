@@ -22,16 +22,28 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var u models.User
-	if err := json.NewDecoder(r.Body).Decode(&u); err != nil {
+	var req struct {
+		Username string      `json:"username"`
+		Email    string      `json:"email"`
+		Password string      `json:"password"`
+		Role     models.Role `json:"role"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
 		return
 	}
 
-	hashed, _ := auth.HashPassword(u.Password)
-	u.Password = hashed
-	if u.Role == "" {
-		u.Role = models.RoleUser
+	hashed, _ := auth.HashPassword(req.Password)
+	role := req.Role
+	if role == "" {
+		role = models.RoleUser
+	}
+
+	u := models.User{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: hashed,
+		Role:     role,
 	}
 
 	newUser := h.UserRepo.Create(u)

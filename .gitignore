@@ -15,3 +15,6 @@ vendor/
 ehthumbs.db
 Icon?
 Thumbs.db
+
+# Documentation (local only)
+doc/

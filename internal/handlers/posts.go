@@ -2,6 +2,8 @@ package handlers
 
 import (
 	"encoding/json"
+	"github.com/kaw3-q/api-blog-go/internal/auth"
+	"github.com/kaw3-q/api-blog-go/internal/middleware"
 	"github.com/kaw3-q/api-blog-go/internal/models"
 	"github.com/kaw3-q/api-blog-go/internal/repository"
 	"net/http"
@@ -39,6 +41,13 @@ func (h *PostHandler) handlePosts(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		// Obtém o usuário logado a partir do contexto para definir o AuthorID de forma segura
+		claims, ok := r.Context().Value(middleware.UserKey).(*auth.Claims)
+		if ok {
+			p.AuthorID = claims.UserID
+		}
+
 		newPost := h.Repo.Create(p)
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(newPost)
@@ -54,13 +63,13 @@ func (h *PostHandler) handlePostByID(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idStr := r.URL.Path[len("/posts/"):]
-	id, err := strconv.Atoi(idStr)
+	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
 
-	post, err := h.Repo.GetByID(id)
+	post, err := h.Repo.GetByID(uint(id))
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

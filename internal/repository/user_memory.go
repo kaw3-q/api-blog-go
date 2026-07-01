@@ -6,15 +6,9 @@ import (
 	"sync"
 )
 
-type UserRepository interface {
-	GetAll() []models.User
-	GetByID(id int) (models.User, error)
-	Create(user models.User) models.User
-}
-
 type memoryUserRepository struct {
 	users  []models.User
-	nextID int
+	nextID uint
 	mu     sync.RWMutex
 }
 
@@ -28,13 +22,24 @@ func NewMemoryUserRepository() UserRepository {
 	}
 }
 
+func (r *memoryUserRepository) GetByEmail(email string) (models.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	for _, u := range r.users {
+		if u.Email == email {
+			return u, nil
+		}
+	}
+	return models.User{}, errors.New("usuário não encontrado")
+}
+
 func (r *memoryUserRepository) GetAll() []models.User {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	return r.users
 }
 
-func (r *memoryUserRepository) GetByID(id int) (models.User, error) {
+func (r *memoryUserRepository) GetByID(id uint) (models.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, u := range r.users {

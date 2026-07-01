@@ -5,11 +5,6 @@ import (
 	"gorm.io/gorm"
 )
 
-type PostRepository interface {
-	GetAll() []models.Post
-	GetByID(id uint) (models.Post, error)
-	Create(post models.Post) models.Post
-}
 
 type sqlPostRepository struct {
 	db *gorm.DB

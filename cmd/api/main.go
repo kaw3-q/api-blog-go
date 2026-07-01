@@ -2,21 +2,35 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net/http"
+	"os"
+
+	"github.com/joho/godotenv"
 	"github.com/kaw3-q/api-blog-go/internal/handlers"
 	"github.com/kaw3-q/api-blog-go/internal/middleware"
 	"github.com/kaw3-q/api-blog-go/internal/models"
 	"github.com/kaw3-q/api-blog-go/internal/repository"
-	"net/http"
 
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
 func main() {
-	// Conexão com Banco de Dados (SQLite para exemplo)
-	db, err := gorm.Open(sqlite.Open("blog.db"), &gorm.Config{})
+	// Carrega as variáveis de ambiente do arquivo .env
+	if err := godotenv.Load(); err != nil {
+		log.Println("Aviso: arquivo .env não encontrado, lendo variáveis de ambiente do sistema")
+	}
+
+	dsn := os.Getenv("DATABASE_URL")
+	if dsn == "" {
+		panic("DATABASE_URL não configurada no ambiente")
+	}
+
+	// Conexão com Banco de Dados PostgreSQL não local
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		panic("falha ao conectar no banco de dados")
+		panic("falha ao conectar no banco de dados: " + err.Error())
 	}
 
 	// Auto-Migrate (Cria tabelas automaticamente)

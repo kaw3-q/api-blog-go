@@ -6,15 +6,9 @@ import (
 	"sync"
 )
 
-type PostRepository interface {
-	GetAll() []models.Post
-	GetByID(id int) (models.Post, error)
-	Create(post models.Post) models.Post
-}
-
 type memoryPostRepository struct {
 	posts  []models.Post
-	nextID int
+	nextID uint
 	mu     sync.RWMutex
 }
 
@@ -23,6 +17,7 @@ func NewMemoryPostRepository() PostRepository {
 		posts: []models.Post{
 			{ID: 1, Title: "Bem-vindo ao meu Blog", Content: "Este é o primeiro post!"},
 		},
+
 		nextID: 2,
 	}
 }
@@ -33,7 +28,7 @@ func (r *memoryPostRepository) GetAll() []models.Post {
 	return r.posts
 }
 
-func (r *memoryPostRepository) GetByID(id int) (models.Post, error) {
+func (r *memoryPostRepository) GetByID(id uint) (models.Post, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	for _, p := range r.posts {
