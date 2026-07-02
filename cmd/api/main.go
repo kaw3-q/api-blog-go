@@ -4,16 +4,13 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"os"
 
 	"github.com/joho/godotenv"
 	"github.com/kaw3-q/api-blog-go/internal/handlers"
 	"github.com/kaw3-q/api-blog-go/internal/middleware"
 	"github.com/kaw3-q/api-blog-go/internal/models"
 	"github.com/kaw3-q/api-blog-go/internal/repository"
-
-	"gorm.io/driver/postgres"
-	"gorm.io/gorm"
+	"github.com/kaw3-q/api-blog-go/prisma/db"
 )
 
 func main() {
@@ -22,39 +19,41 @@ func main() {
 		log.Println("Aviso: arquivo .env não encontrado, lendo variáveis de ambiente do sistema")
 	}
 
-	dsn := os.Getenv("DATABASE_URL")
-	if dsn == "" {
-		panic("DATABASE_URL não configurada no ambiente")
+	// Inicialização do Prisma Client Go
+	client := db.NewClient()
+	if err := client.Connect(); err != nil {
+		panic("falha ao conectar no banco de dados via Prisma: " + err.Error())
 	}
+	defer func() {
+		if err := client.Disconnect(); err != nil {
+			log.Printf("erro ao desconectar o Prisma Client: %v", err)
+		}
+	}()
 
-	// Conexão com Banco de Dados PostgreSQL não local
-	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
-	if err != nil {
-		panic("falha ao conectar no banco de dados: " + err.Error())
-	}
-
-	// Auto-Migrate (Cria tabelas automaticamente)
-	db.AutoMigrate(&models.User{}, &models.Post{})
-
-	// Repositórios SQL (Proteção contra SQL Injection nativa via GORM/Prepared Statements)
-	postRepo := repository.NewSQLPostRepository(db)
-	userRepo := repository.NewSQLUserRepository(db)
+	// Repositórios usando Prisma Client
+	userRepo := repository.NewPrismaUserRepository(client)
+	postRepo := repository.NewPrismaPostRepository(client)
+	categoryRepo := repository.NewPrismaCategoryRepository(client)
+	tagRepo := repository.NewPrismaTagRepository(client)
+	commentRepo := repository.NewPrismaCommentRepository(client)
+	likeRepo := repository.NewPrismaLikeRepository(client)
 
 	// Handlers
-	postHandler := handlers.NewPostHandler(postRepo)
-	userHandler := handlers.NewUserHandler(userRepo)
 	authHandler := handlers.NewAuthHandler(userRepo)
+	userHandler := handlers.NewUserHandler(userRepo)
+	postHandler := handlers.NewPostHandler(postRepo)
+	categoryHandler := handlers.NewCategoryHandler(categoryRepo)
+	tagHandler := handlers.NewTagHandler(tagRepo)
+	commentHandler := handlers.NewCommentHandler(commentRepo)
+	likeHandler := handlers.NewLikeHandler(likeRepo)
 
 	mux := http.NewServeMux()
 
-	// Rotas Públicas
+	// Rotas Públicas de Autenticação
 	mux.HandleFunc("/login", authHandler.Login)
 	mux.HandleFunc("/register", authHandler.Register)
 
-	// Rotas Protegidas (Exemplo de uso de Middleware)
-	// Para manter o exemplo simples com http.NewServeMux, aplicamos o middleware manualmente
-	// Em frameworks como Gin ou Echo, isso seria mais elegante.
-	
+	// Rota de Posts (Pública para GET, Protegida via AuthMiddleware para POST)
 	mux.Handle("/posts", middleware.SecurityHeadersMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodPost {
 			middleware.AuthMiddleware(http.HandlerFunc(postHandler.ServeHTTP)).ServeHTTP(w, r)
@@ -63,9 +62,42 @@ func main() {
 		}
 	})))
 
+	// Rota de Categorias (Pública para GET, Protegida via AuthMiddleware para POST)
+	mux.Handle("/categories", middleware.SecurityHeadersMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			middleware.AuthMiddleware(http.HandlerFunc(categoryHandler.ServeHTTP)).ServeHTTP(w, r)
+		} else {
+			categoryHandler.ServeHTTP(w, r)
+		}
+	})))
+
+	// Rota de Tags (Pública para GET, Protegida via AuthMiddleware para POST)
+	mux.Handle("/tags", middleware.SecurityHeadersMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			middleware.AuthMiddleware(http.HandlerFunc(tagHandler.ServeHTTP)).ServeHTTP(w, r)
+		} else {
+			tagHandler.ServeHTTP(w, r)
+		}
+	})))
+
+	// Rota de Comentários (Pública para GET/Listagem, Protegida via AuthMiddleware para POST/Criação)
+	mux.Handle("/comments", middleware.SecurityHeadersMiddleware(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPost {
+			middleware.AuthMiddleware(http.HandlerFunc(commentHandler.ServeHTTP)).ServeHTTP(w, r)
+		} else {
+			commentHandler.ServeHTTP(w, r)
+		}
+	})))
+
+	// Rota de Likes (Totalmente protegida - apenas usuários logados curtem)
+	mux.Handle("/likes", middleware.SecurityHeadersMiddleware(middleware.AuthMiddleware(likeHandler)))
+
+	// Rotas de Administração (Apenas Admin)
 	mux.Handle("/admin/users", middleware.AuthMiddleware(middleware.RoleMiddleware(models.RoleAdmin)(userHandler)))
 
 	port := ":8080"
-	fmt.Printf("Servidor Blog SEGURO rodando em http://localhost%s\n", port)
-	http.ListenAndServe(port, middleware.CORSMiddleware(mux))
+	fmt.Printf("Servidor Blog com Prisma rodando em http://localhost%s\n", port)
+	if err := http.ListenAndServe(port, middleware.CORSMiddleware(mux)); err != nil {
+		log.Fatalf("erro ao iniciar o servidor: %v", err)
+	}
 }

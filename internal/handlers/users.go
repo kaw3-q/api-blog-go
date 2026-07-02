@@ -28,7 +28,11 @@ func (h *UserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 func (h *UserHandler) handleUsers(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		users := h.Repo.GetAll()
+		users, err := h.Repo.GetAll()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(users)
 	case http.MethodPost:
@@ -37,19 +41,22 @@ func (h *UserHandler) handleUsers(w http.ResponseWriter, r *http.Request) {
 			Email    string      `json:"email"`
 			Password string      `json:"password"`
 			Role     models.Role `json:"role"`
+			Avatar   *string     `json:"avatar"`
+			Bio      *string     `json:"bio"`
+			Github   *string     `json:"github"`
+			Linkedin *string     `json:"linkedin"`
+			Website  *string     `json:"website"`
 		}
 		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
 
-		// Por padrão, novos usuários são do tipo "user"
 		role := req.Role
 		if role == "" {
 			role = models.RoleUser
 		}
 
-		// Hashea a senha antes de salvar no banco
 		hashed, _ := auth.HashPassword(req.Password)
 
 		u := models.User{
@@ -57,9 +64,19 @@ func (h *UserHandler) handleUsers(w http.ResponseWriter, r *http.Request) {
 			Email:    req.Email,
 			Password: hashed,
 			Role:     role,
+			Avatar:   req.Avatar,
+			Bio:      req.Bio,
+			Github:   req.Github,
+			Linkedin: req.Linkedin,
+			Website:  req.Website,
 		}
 
-		newUser := h.Repo.Create(u)
+		newUser, err := h.Repo.Create(u)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		json.NewEncoder(w).Encode(newUser)
 	default:
@@ -69,13 +86,13 @@ func (h *UserHandler) handleUsers(w http.ResponseWriter, r *http.Request) {
 
 func (h *UserHandler) handleUserByID(w http.ResponseWriter, r *http.Request) {
 	idStr := r.URL.Path[len("/users/"):]
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.Atoi(idStr)
 	if err != nil {
 		http.Error(w, "ID inválido", http.StatusBadRequest)
 		return
 	}
 
-	user, err := h.Repo.GetByID(uint(id))
+	user, err := h.Repo.GetByID(id)
 	if err != nil {
 		http.Error(w, err.Error(), http.StatusNotFound)
 		return

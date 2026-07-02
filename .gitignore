@@ -18,3 +18,8 @@ Thumbs.db
 
 # Documentation (local only)
 doc/
+
+# Environment and local DB
+.env
+prisma/dev.db
+

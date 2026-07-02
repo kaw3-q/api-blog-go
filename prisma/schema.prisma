@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "go run github.com/steebchen/prisma-client-go"
 }
@@ -13,22 +7,119 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+enum Role {
+  USER
+  EDITOR
+  ADMIN
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
 model User {
   id        Int      @id @default(autoincrement())
+
   username  String   @unique
   email     String   @unique
   password  String
-  role      String   @default("user")
-  createdAt DateTime @default(now())
+
+  role      Role     @default(USER)
+
+  avatar    String?
+  bio       String?
+
+  github    String?
+  linkedin  String?
+  website   String?
+
   posts     Post[]
+  comments  Comment[]
+  likes     Like[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Post {
-  id        Int      @id @default(autoincrement())
-  title     String
-  content   String
-  authorId  Int
-  author    User     @relation(fields: [authorId], references: [id])
+  id              Int          @id @default(autoincrement())
+
+  title           String
+  slug            String       @unique
+  excerpt         String?
+  content         String
+
+  coverImage      String?
+
+  status          PostStatus   @default(DRAFT)
+  featured        Boolean      @default(false)
+
+  views           Int          @default(0)
+  readingTime     Int?
+
+  metaTitle       String?
+  metaDescription String?
+
+  authorId        Int
+  author          User         @relation(fields: [authorId], references: [id])
+
+  categoryId      Int?
+  category         Category?   @relation(fields: [categoryId], references: [id])
+
+  tags            Tag[]
+
+  comments        Comment[]
+  likes           Like[]
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  publishedAt     DateTime?
+}
+
+model Category {
+  id          Int      @id @default(autoincrement())
+
+  name        String   @unique
+  slug        String   @unique
+  description String?
+
+  posts       Post[]
+}
+
+model Tag {
+  id          Int      @id @default(autoincrement())
+
+  name        String   @unique
+  slug        String   @unique
+
+  posts       Post[]
+}
+
+model Comment {
+  id          Int      @id @default(autoincrement())
+
+  content     String
+
+  authorId    Int
+  author      User     @relation(fields: [authorId], references: [id])
+
+  postId      Int
+  post        Post     @relation(fields: [postId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Like {
+  userId Int
+  postId Int
+
+  user User @relation(fields: [userId], references: [id])
+  post Post @relation(fields: [postId], references: [id])
+
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@id([userId, postId])
 }

@@ -5,17 +5,24 @@ import "time"
 type Role string
 
 const (
-	RoleUser  Role = "user"
-	RoleAdmin Role = "admin"
+	RoleUser   Role = "USER"
+	RoleEditor Role = "EDITOR"
+	RoleAdmin  Role = "ADMIN"
 )
 
 type User struct {
-	ID        uint      `gorm:"primaryKey" json:"id"`
-	Username  string    `gorm:"unique;not null" json:"username"`
-	Email     string    `gorm:"unique;not null" json:"email"`
-	Password  string    `gorm:"not null" json:"-"` // Oculto no JSON
-	Role      Role      `gorm:"default:user" json:"role"`
+	ID        int       `json:"id"`
+	Username  string    `json:"username"`
+	Email     string    `json:"email"`
+	Password  string    `json:"-"` // Oculto no JSON
+	Role      Role      `json:"role"`
+	Avatar    *string   `json:"avatar,omitempty"`
+	Bio       *string   `json:"bio,omitempty"`
+	Github    *string   `json:"github,omitempty"`
+	Linkedin  *string   `json:"linkedin,omitempty"`
+	Website   *string   `json:"website,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
+	UpdatedAt time.Time `json:"updated_at"`
 }
 
 type LoginRequest struct {

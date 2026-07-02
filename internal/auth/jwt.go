@@ -10,7 +10,7 @@ import (
 var jwtKey = []byte("sua_chave_secreta_super_segura") // Em prod, use env var
 
 type Claims struct {
-	UserID uint        `json:"user_id"`
+	UserID int         `json:"user_id"`
 	Role   models.Role `json:"role"`
 	jwt.RegisteredClaims
 }

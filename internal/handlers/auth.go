@@ -46,11 +46,23 @@ func (h *AuthHandler) Register(w http.ResponseWriter, r *http.Request) {
 		Role:     role,
 	}
 
-	newUser := h.UserRepo.Create(u)
+	newUser, err := h.UserRepo.Create(u)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
+	w.Header().Set("Content-Type", "application/json")
+	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(newUser)
 }
 
 func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodPost {
+		http.Error(w, "Método não permitido", http.StatusMethodNotAllowed)
+		return
+	}
+
 	var req models.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		http.Error(w, "Payload inválido", http.StatusBadRequest)
@@ -64,6 +76,7 @@ func (h *AuthHandler) Login(w http.ResponseWriter, r *http.Request) {
 	}
 
 	token, _ := auth.GenerateToken(user)
+	w.Header().Set("Content-Type", "application/json")
 	json.NewEncoder(w).Encode(models.LoginResponse{
 		Token: token,
 		User:  user,
