@@ -110,7 +110,7 @@ func (r *prismaPostRepository) Create(post models.Post) (models.Post, error) {
 		opts = append(opts, db.Post.MetaDescription.Set(*post.MetaDescription))
 	}
 	if post.CategoryID != nil {
-		opts = append(opts, db.Post.CategoryID.Set(*post.CategoryID))
+		opts = append(opts, db.Post.Category.Link(db.Category.ID.Equals(*post.CategoryID)))
 	}
 	if post.PublishedAt != nil {
 		opts = append(opts, db.Post.PublishedAt.Set(*post.PublishedAt))
